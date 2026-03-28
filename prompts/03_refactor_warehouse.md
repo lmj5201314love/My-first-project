@@ -20,8 +20,9 @@ Priority goals:
 
 Expected outcome:
 
-- `src/warehouse.py` contains modular placeholders or migrated helpers for connection setup, dimension building, fact building, and import orchestration
+- `src/warehouse.py` contains modular helpers for connection setup, dimension building, fact building, and import orchestration
 - warehouse safety risks are reduced in the new path without rewriting the whole repo
+- default execution stays in dry-run mode unless an explicit write flag is provided
 
 Required report:
 

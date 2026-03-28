@@ -1,4 +1,4 @@
-"""Minimal shared configuration for the future modular project."""
+"""Shared configuration helpers for the modular project."""
 
 from __future__ import annotations
 
@@ -28,3 +28,49 @@ def get_database_config() -> dict[str, str]:
         "port": os.getenv("DB_PORT", "3306"),
         "database": os.getenv("DB_NAME", ""),
     }
+
+
+def get_database_config_summary() -> dict[str, str]:
+    """Return a safe, beginner-friendly config summary without exposing secrets."""
+    config = get_database_config()
+    password_status = "set" if config["password"] else "missing"
+    return {
+        "user": config["user"] or "(missing)",
+        "password": f"({password_status})",
+        "host": config["host"] or "(missing)",
+        "port": config["port"] or "(missing)",
+        "database": config["database"] or "(missing)",
+    }
+
+
+def get_missing_database_env_vars() -> list[str]:
+    """Return required database environment variable names that are still missing."""
+    config = get_database_config()
+    missing: list[str] = []
+
+    if not config["user"]:
+        missing.append("DB_USER")
+    if not config["password"]:
+        missing.append("DB_PASSWORD")
+    if not config["host"]:
+        missing.append("DB_HOST")
+    if not config["port"]:
+        missing.append("DB_PORT")
+    if not config["database"]:
+        missing.append("DB_NAME")
+
+    return missing
+
+
+def get_database_config_help_message() -> str:
+    """Return a clear setup message for beginners when env vars are incomplete."""
+    missing = get_missing_database_env_vars()
+    if not missing:
+        return "Database environment variables look complete."
+
+    missing_text = ", ".join(missing)
+    return (
+        "Database configuration is incomplete. "
+        f"Please set these environment variables before writing to MySQL: {missing_text}. "
+        "You can copy the values from .env.example into your local environment first."
+    )

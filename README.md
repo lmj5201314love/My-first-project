@@ -19,6 +19,7 @@ At this stage, the legacy scripts remain authoritative for business logic:
 
 - `data_preparation+.py` is still the preprocessing source of truth.
 - `data_import.py` is still the warehouse import source of truth.
+- `src/warehouse.py` is now a safer new-entry scaffold for warehouse work, but it does not replace the legacy script yet.
 
 The new `src/` package is only a scaffold for incremental migration.
 
@@ -55,6 +56,18 @@ See `requirements.txt` for the current minimal Python dependencies used by the e
 4. Move warehouse import logic into `src/warehouse.py`.
 5. Add SQL schema and view definitions under `sql/`.
 6. Compare new modules against legacy outputs before retiring old scripts.
+
+## Safer Warehouse Entry
+
+The new `src/warehouse.py` is designed as a safer first step for warehouse refactoring:
+
+- it reads database configuration from environment variables instead of hard-coding credentials
+- it prints a safe configuration summary without exposing the password
+- it defaults to a dry-run summary mode
+- it does not write to MySQL unless you explicitly pass a write flag
+- it does not truncate existing tables unless you explicitly pass a clear flag together with a write flag
+
+This means the legacy warehouse script is still the source of truth, while the new entry point is a safer place to gradually move import logic.
 
 ## Risk Notes
 
