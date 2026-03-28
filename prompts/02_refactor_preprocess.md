@@ -18,6 +18,7 @@ Expected outcome:
 - `src/preprocess.py` contains clear functions for loading raw data, deriving fields, and saving processed output
 - legacy and new outputs can be compared safely
 - changes are small and easy for a beginner to follow
+- default execution stays in dry-run mode unless an explicit output path is provided
 
 Required report:
 

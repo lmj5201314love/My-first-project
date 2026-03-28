@@ -18,6 +18,7 @@ Current real pipeline:
 At this stage, the legacy scripts remain authoritative for business logic:
 
 - `data_preparation+.py` is still the preprocessing source of truth.
+- `src/preprocess.py` is now a clearer new-entry scaffold for preprocessing work, but it does not replace the legacy script yet.
 - `data_import.py` is still the warehouse import source of truth.
 - `src/warehouse.py` is now a safer new-entry scaffold for warehouse work, but it does not replace the legacy script yet.
 
@@ -68,6 +69,18 @@ The new `src/warehouse.py` is designed as a safer first step for warehouse refac
 - it does not truncate existing tables unless you explicitly pass a clear flag together with a write flag
 
 This means the legacy warehouse script is still the source of truth, while the new entry point is a safer place to gradually move import logic.
+
+## Safer Preprocess Entry
+
+The new `src/preprocess.py` is designed as a safer first step for preprocessing refactoring:
+
+- it keeps the legacy preprocessing script as the current source of truth
+- it splits the current preprocessing flow into named functions
+- it defaults to a dry-run summary mode
+- it does not overwrite the legacy `manufacturing_data_processed.csv` by default
+- it only writes a new processed CSV when you explicitly pass an output path
+
+This means the legacy preprocessing script is still authoritative, while the new module is a clearer place to migrate logic in small steps.
 
 ## Risk Notes
 
