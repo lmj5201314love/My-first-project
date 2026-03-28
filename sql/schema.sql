@@ -1,0 +1,14 @@
+-- Minimal warehouse schema scaffold.
+-- This file is intentionally incomplete in the skeleton stage.
+-- The current import behavior still lives in data_import.py.
+--
+-- Planned warehouse objects:
+-- 1. dim_equipment
+-- 2. dim_time
+-- 3. fact_equipment_status
+--
+-- Future work:
+-- - align column names with manufacturing_data_processed.csv
+-- - define primary keys and foreign keys
+-- - make destructive operations explicit and safe
+-- - review data types against legacy script output

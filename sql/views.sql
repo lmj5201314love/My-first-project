@@ -1,0 +1,12 @@
+-- Minimal analysis view scaffold.
+-- This file is intentionally incomplete in the skeleton stage.
+--
+-- Planned views may include:
+-- 1. equipment_daily_oee
+-- 2. line_quality_summary
+-- 3. failure_and_defect_overview
+--
+-- Future work:
+-- - derive views from the final warehouse schema
+-- - confirm naming conventions
+-- - validate metrics against legacy outputs
