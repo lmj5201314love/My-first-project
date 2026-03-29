@@ -26,6 +26,14 @@ RAW_REQUIRED_COLUMNS = (
     "Machine failure",
 )
 
+FAILURE_MODE_COLUMNS = (
+    "TWF",
+    "HDF",
+    "PWF",
+    "OSF",
+    "RNF",
+)
+
 OUTPUT_COLUMNS = [
     "UDI",
     "production_time",
@@ -53,6 +61,11 @@ OUTPUT_COLUMNS = [
     "quality_rate",
     "oee",
     "Machine failure",
+    "TWF",
+    "HDF",
+    "PWF",
+    "OSF",
+    "RNF",
 ]
 
 
@@ -80,7 +93,8 @@ def load_raw_data(filepath: str | None = None) -> pd.DataFrame:
         )
 
     df = pd.read_csv(target_path)
-    missing = [column for column in RAW_REQUIRED_COLUMNS if column not in df.columns]
+    required_columns = RAW_REQUIRED_COLUMNS + FAILURE_MODE_COLUMNS
+    missing = [column for column in required_columns if column not in df.columns]
     if missing:
         missing_text = ", ".join(missing)
         raise ValueError(
@@ -121,21 +135,35 @@ def map_equipment(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_production_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add theoretical cycle time and production quantity fields."""
+    """Add integer-style production quantity fields for the 15-minute window."""
     result = df.copy()
     cycle_time_map = {"L": 900, "M": 720, "H": 600}
+    planned_batch_map = {"L": 80, "M": 100, "H": 120}
     result["theoretical_cycle_time"] = result["Type"].map(cycle_time_map)
-    result["planned_production"] = (15 * 60) / result["theoretical_cycle_time"]
-    result["performance_rate"] = result["Rotational speed [rpm]"] / 1500.0
+    result["planned_production"] = result["Type"].map(planned_batch_map).astype(int)
+    result["performance_rate"] = (result["Rotational speed [rpm]"] / 1500.0).clip(0.70, 1.15)
+    wear_ratio = (
+        result["Tool wear [min]"] / result["Tool wear [min]"].max()
+    ).clip(0, 1)
 
     np.random.seed(42)
-    result["actual_production"] = (
-        result["planned_production"]
-        * result["performance_rate"]
-        * np.random.uniform(0.95, 1.0, len(result))
+    runtime_factor = (
+        result["performance_rate"]
+        * np.random.uniform(0.88, 1.00, len(result))
+        * (1 - (0.12 * wear_ratio))
     )
+    failure_penalty = np.where(
+        result["Machine failure"] == 1,
+        np.random.uniform(0.45, 0.75, len(result)),
+        1.0,
+    )
+    runtime_factor = (runtime_factor * failure_penalty).clip(0, 1.0)
+    result["actual_production"] = np.floor(
+        result["planned_production"] * runtime_factor
+    ).astype(int)
     result["actual_production"] = result["actual_production"].clip(
-        upper=result["planned_production"]
+        lower=0,
+        upper=result["planned_production"],
     )
     return result
 
@@ -159,13 +187,31 @@ def add_process_stability_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_quality_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add defect rate and count features using the legacy business intent."""
+    """Add discrete defect and quality counts using integer production quantities."""
     result = df.copy()
-    result["defect_rate"] = 0.01 + (result["process_stability_score"] * 2)
-    result.loc[result["Machine failure"] == 1, "defect_rate"] += 0.10
-    result["defect_rate"] = result["defect_rate"].clip(0.01, 0.20)
-    result["defect_count"] = (result["actual_production"] * result["defect_rate"]).round().astype(int)
-    result["qualified_count"] = (result["actual_production"] - result["defect_count"]).clip(lower=0)
+    wear_ratio = (
+        result["Tool wear [min]"] / result["Tool wear [min]"].max()
+    ).clip(0, 1)
+    result["defect_rate"] = (
+        0.015
+        + (result["process_stability_score"] * 3.5)
+        + (wear_ratio * 0.04)
+    )
+    result.loc[result["Machine failure"] == 1, "defect_rate"] += 0.08
+    result["defect_rate"] = result["defect_rate"].clip(0.01, 0.25)
+
+    rng = np.random.default_rng(42)
+    actual_units = result["actual_production"].astype(int).to_numpy()
+    defect_prob = result["defect_rate"].to_numpy()
+    result["defect_count"] = [
+        int(rng.binomial(int(units), float(prob))) if units > 0 else 0
+        for units, prob in zip(actual_units, defect_prob)
+    ]
+    result["defect_count"] = result["defect_count"].astype(int)
+    result["qualified_count"] = (
+        result["actual_production"].astype(int) - result["defect_count"]
+    ).clip(lower=0)
+    result["qualified_count"] = result["qualified_count"].astype(int)
     return result
 
 
@@ -196,13 +242,22 @@ def validate_processed_data(df: pd.DataFrame) -> dict[str, object]:
     """Run lightweight validation checks on the processed DataFrame."""
     required_columns = ("production_time", "equipment_id", "oee")
     missing = [column for column in required_columns if column not in df.columns]
+    quantity_columns = ("planned_production", "actual_production", "defect_count", "qualified_count")
+    quantity_integer_like = all(
+        pd.api.types.is_integer_dtype(df[column]) for column in quantity_columns if column in df.columns
+    )
     validation = {
         "row_count": len(df),
         "column_count": len(df.columns),
         "missing_required_columns": missing,
         "equipment_count": int(df["equipment_id"].nunique()) if "equipment_id" in df.columns else 0,
+        "defect_count_sum": int(df["defect_count"].sum()) if "defect_count" in df.columns else 0,
+        "quality_rate_unique_count": int(df["quality_rate"].nunique()) if "quality_rate" in df.columns else 0,
         "oee_zero_count": int((df["oee"] == 0).sum()) if "oee" in df.columns else 0,
         "oee_gt_0_9_count": int((df["oee"] > 0.9).sum()) if "oee" in df.columns else 0,
+        "quantity_columns_integer_like": quantity_integer_like,
+        "quality_rate_in_range": bool(df["quality_rate"].between(0, 1).all()) if "quality_rate" in df.columns else False,
+        "oee_in_range": bool(df["oee"].between(0, 1).all()) if "oee" in df.columns else False,
     }
     validation["is_valid"] = len(missing) == 0
     return validation

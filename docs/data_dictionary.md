@@ -22,6 +22,11 @@ The processed CSV is currently represented by `manufacturing_data_processed.csv`
 | `Torque [Nm]` | numeric | Raw field | Torque in Nm |
 | `Tool wear [min]` | numeric | Raw field | Tool wear in minutes |
 | `Machine failure` | 0/1-like | Raw field | Source failure label from AI4I |
+| `TWF` | 0/1-like | Raw field | Tool wear failure label from AI4I |
+| `HDF` | 0/1-like | Raw field | Heat dissipation failure label from AI4I |
+| `PWF` | 0/1-like | Raw field | Power failure label from AI4I |
+| `OSF` | 0/1-like | Raw field | Overstrain failure label from AI4I |
+| `RNF` | 0/1-like | Raw field | Random failure label from AI4I |
 | `production_time` | datetime-like | Derived field | Synthetic production timestamp added during preprocessing |
 | `shift` | categorical | Derived field | Shift label derived from `production_time`: `Day`, `Evening`, `Night` |
 | `production_line` | categorical | Derived field | Line label mapped from `Type` |
@@ -31,11 +36,11 @@ The processed CSV is currently represented by `manufacturing_data_processed.csv`
 | `process_temp_dev` | numeric | Derived field | Relative deviation from mean process temperature |
 | `torque_dev` | numeric | Derived field | Relative deviation from mean torque |
 | `theoretical_cycle_time` | numeric | Derived field | Assumed theoretical cycle time in seconds based on `Type` |
-| `planned_production` | numeric | Derived field, proxy metric | Planned production quantity for the current 15-minute window |
-| `actual_production` | numeric | Derived field, proxy metric | Simulated actual production quantity after performance and random fluctuation |
-| `defect_rate` | numeric | Derived field, proxy metric | Simulated defect rate based on process stability and failure penalty |
-| `defect_count` | integer-like | Derived field, proxy metric | Rounded defect count for the current record |
-| `qualified_count` | integer-like | Derived field, proxy metric | Rounded non-defect count for the current record |
+| `planned_production` | integer-like | Derived field, proxy metric | Simulated planned unit count for the current 15-minute window, using type-based capacity tiers |
+| `actual_production` | integer-like | Derived field, proxy metric | Simulated actual unit count after performance, wear, and failure-related penalties |
+| `defect_rate` | numeric | Derived field, proxy metric | Simulated defect probability based on process stability, wear, and failure penalty |
+| `defect_count` | integer-like | Derived field, proxy metric | Discrete simulated defect unit count sampled from the actual production quantity |
+| `qualified_count` | integer-like | Derived field, proxy metric | Non-defect unit count, calculated as `actual_production - defect_count` |
 | `availability` | numeric | Derived field, proxy metric | Availability factor used in current OEE logic |
 | `performance` | numeric | Derived field, proxy metric | Performance factor used in current OEE logic |
 | `quality_rate` | numeric | Derived field, proxy metric | Quality factor used in current OEE logic |
@@ -151,6 +156,8 @@ These definitions are intentionally practical and current-stage only:
 
 - current `production_time` is synthetic, not a raw timestamp from the source dataset
 - current `production_line` and `equipment_id` are generated mappings, not original source identifiers
+- current `Machine failure` is the broader failure label, while `TWF`, `HDF`, `PWF`, `OSF`, and `RNF` are finer raw failure mode labels from AI4I
+- current `planned_production`, `actual_production`, `defect_count`, and `qualified_count` follow simulated integer-count logic rather than MES-certified plant counts
 - current `defect_rate`, `availability`, `performance`, `quality_rate`, and `oee` are project metrics built from preprocessing rules
 - current SQL schema is designed to match the Python DataFrame structure first, not to represent a final industrial warehouse standard
 

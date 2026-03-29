@@ -18,6 +18,8 @@ The current project is best suited to answer questions like these:
 4. Which equipment appears more often in failure-labelled records?
 5. Which conclusions are supported by the current proxy metrics, and which are still outside the scope of this project?
 
+Where available, later failure analysis can also compare the broader `Machine failure` label with finer AI4I failure mode labels such as `TWF`, `HDF`, `PWF`, `OSF`, and `RNF`.
+
 ## Data Scope And Current Assumptions
 
 ### Current data sources
@@ -37,6 +39,7 @@ The current project is best suited to answer questions like these:
   generated fields such as `production_time`, `shift`, `production_line`, `equipment_id`, and `time_key`
 - proxy / simulated metrics:
   current project metrics such as `planned_production`, `actual_production`, `defect_rate`, `availability`, `performance`, `quality_rate`, and `oee`
+  quality-related findings should be interpreted against the current simulated integer-count quantity logic rather than against certified plant counts
 
 ### Current analysis boundary
 

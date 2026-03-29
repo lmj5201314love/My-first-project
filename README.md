@@ -24,7 +24,7 @@ The newer modules under `src/` are safer incremental entry points, but they do n
 - `data_preparation+.py`
   Legacy preprocessing script. Still authoritative for current preprocessing logic.
 - `src/preprocess.py`
-  Safer preprocessing entry scaffold. It reorganizes the same flow into clearer functions and defaults to dry-run mode.
+  Safer preprocessing entry scaffold. It reorganizes the same flow into clearer functions, defaults to dry-run mode, and now retains granular AI4I failure mode labels in the refactor snapshot for later failure analysis.
 - `data_import.py`
   Legacy warehouse import script. Still authoritative for current import logic.
 - `src/warehouse.py`
@@ -98,8 +98,8 @@ Notes:
 The current tests protect different layers of the project:
 
 - `tests/test_data_contract.py`
-  Protects processed CSV contract and legacy-vs-refactor output comparison.
-  It checks file existence, key fields, column count, column order, row count, first-row sample, and warehouse-required input columns.
+  Protects processed CSV contract and refactor output sanity.
+  It checks file existence, key fields, column count, column order, row count, warehouse-required input columns, and quantity/quality sanity checks for the refactor snapshot.
 - `tests/test_warehouse_structure.py`
   Protects DataFrame structure produced by `src/warehouse.py`.
   It checks equipment dimension columns and uniqueness, time dimension date-grain behavior, and fact table columns, row count, and basic dtype semantics.
@@ -119,5 +119,6 @@ This project is still in a transition stage. Important caveats:
 
 - legacy scripts are still the business reference
 - current OEE and related KPI fields are proxy or simulated manufacturing metrics built from current rules
+- the refactor processed snapshot now prioritizes safer and more realistic simulated quantity semantics rather than value-by-value equality with the legacy CSV
 - the SQL design is a first-pass schema, not a final production warehouse
 - the new modules focus on safety and readability first, not on rewriting all legacy behavior at once
