@@ -1,93 +1,119 @@
 # Manufacturing Data Analysis Project
 
-## Current Status
+Student manufacturing analytics project built on the AI4I 2020 dataset, currently being refactored from legacy scripts into a safer local project structure.
 
-This repository is being reorganized into a small, maintainable local project without rewriting the current workflow all at once.
+## Current Real Pipeline
 
-Current source of truth:
-
-- `ai4i2020.csv`
-- `data_preparation+.py`
-- `manufacturing_data_processed.csv`
-- `data_import.py`
-
-Current real pipeline:
+Current source data flow in this repository:
 
 `ai4i2020.csv` -> `data_preparation+.py` -> `manufacturing_data_processed.csv` -> `data_import.py`
 
-At this stage, the legacy scripts remain authoritative for business logic:
+This is still the real legacy pipeline today.
 
-- `data_preparation+.py` is still the preprocessing source of truth.
-- `src/preprocess.py` is now a clearer new-entry scaffold for preprocessing work, but it does not replace the legacy script yet.
-- `data_import.py` is still the warehouse import source of truth.
-- `src/warehouse.py` is now a safer new-entry scaffold for warehouse work, but it does not replace the legacy script yet.
+## Current Source Of Truth
 
-The new `src/` package is only a scaffold for incremental migration.
+- `ai4i2020.csv`: raw input dataset
+- `data_preparation+.py`: preprocessing source of truth
+- `manufacturing_data_processed.csv`: legacy processed output reference
+- `data_import.py`: MySQL import source of truth
 
-## Current Goal
+The newer modules under `src/` are safer incremental entry points, but they do not replace the legacy scripts yet.
 
-The current goal is to create a minimal project skeleton that makes the next refactor easier for a beginner to follow.
+## Legacy Scripts And New Entrypoints
 
-This stage does not:
+- `data_preparation+.py`
+  Legacy preprocessing script. Still authoritative for current preprocessing logic.
+- `src/preprocess.py`
+  Safer preprocessing entry scaffold. It reorganizes the same flow into clearer functions and defaults to dry-run mode.
+- `data_import.py`
+  Legacy warehouse import script. Still authoritative for current import logic.
+- `src/warehouse.py`
+  Safer warehouse entry scaffold. It builds warehouse DataFrames and prints summaries by default instead of writing to MySQL.
 
-- rewrite preprocessing logic
-- rewrite warehouse import logic
-- change business formulas
-- delete legacy files
+## Current Tables And Views
 
-## Repository Layout
+Current warehouse design is based on three tables:
 
-- `data/raw/`: intended location for raw input data in the future
-- `data/processed/`: intended location for processed output data in the future
-- `src/`: modular Python code that will gradually replace legacy scripts
-- `sql/`: schema and view definitions for warehouse setup
-- `tests/`: lightweight checks and contract tests
-- `prompts/`: guided prompts for the next refactor steps
-- `docs/`: scope and project notes
+- `dim_equipment`
+  Equipment dimension built from processed CSV fields such as `equipment_id`, `production_line`, and `theoretical_cycle_time`.
+- `dim_time`
+  Date-grain time dimension built from `production_time`.
+- `fact_equipment_status`
+  Fact table containing KPI, quality, and machine status fields such as `oee`, `availability`, `performance`, `quality_rate`, and `machine_failure`.
 
-## Dependencies
+Current SQL view definitions include:
 
-See `requirements.txt` for the current minimal Python dependencies used by the existing scripts.
+- `vw_daily_equipment_kpi`
+  Daily KPI summary by equipment.
+- `vw_failure_summary`
+  Failure-oriented KPI summary by equipment and line.
+- `vw_shift_kpi`
+  KPI summary by production line and shift.
 
-## Planned Migration Path
+See [data_dictionary.md](C:\Itmes_2\docs\data_dictionary.md) for field-level explanations.
 
-1. Keep legacy scripts unchanged as the reference implementation.
-2. Move preprocessing logic into `src/preprocess.py` in small steps.
-3. Move validation logic into `src/validate.py`.
-4. Move warehouse import logic into `src/warehouse.py`.
-5. Add SQL schema and view definitions under `sql/`.
-6. Compare new modules against legacy outputs before retiring old scripts.
+## Recommended Beginner Workflow
 
-## Safer Warehouse Entry
+Recommended order for understanding and validating the project:
 
-The new `src/warehouse.py` is designed as a safer first step for warehouse refactoring:
+1. Read [project_scope.md](C:\Itmes_2\docs\project_scope.md) and [data_dictionary.md](C:\Itmes_2\docs\data_dictionary.md).
+2. Treat `data_preparation+.py` and `data_import.py` as the current business references.
+3. Run `src/preprocess.py` in dry-run mode to inspect the preprocessing output safely.
+4. Run `src/warehouse.py` in dry-run mode to inspect dimension and fact table structure safely.
+5. Run the test suite to verify current data and warehouse contracts.
+6. Review `sql/schema.sql` and `sql/views.sql` as the first-pass warehouse documentation.
 
-- it reads database configuration from environment variables instead of hard-coding credentials
-- it prints a safe configuration summary without exposing the password
-- it defaults to a dry-run summary mode
-- it does not write to MySQL unless you explicitly pass a write flag
-- it does not truncate existing tables unless you explicitly pass a clear flag together with a write flag
+## Current Safety Design
 
-This means the legacy warehouse script is still the source of truth, while the new entry point is a safer place to gradually move import logic.
+The repository now includes a few safe-first design choices:
 
-## Safer Preprocess Entry
+- `src/preprocess.py` defaults to dry-run mode
+- `src/preprocess.py` does not overwrite `manufacturing_data_processed.csv` unless you explicitly pass `--output`
+- `src/warehouse.py` defaults to dry-run mode
+- `src/warehouse.py` does not write to MySQL unless you explicitly pass `--write`
+- `src/warehouse.py` only allows truncation behavior when `--clear-existing` is explicitly combined with `--write`
+- database configuration for the new warehouse entry comes from environment variables rather than hard-coded secrets
 
-The new `src/preprocess.py` is designed as a safer first step for preprocessing refactoring:
+## Recommended Commands
 
-- it keeps the legacy preprocessing script as the current source of truth
-- it splits the current preprocessing flow into named functions
-- it defaults to a dry-run summary mode
-- it does not overwrite the legacy `manufacturing_data_processed.csv` by default
-- it only writes a new processed CSV when you explicitly pass an output path
+Safe commands for local inspection:
 
-This means the legacy preprocessing script is still authoritative, while the new module is a clearer place to migrate logic in small steps.
+- `.\.venv\Scripts\python.exe -m src.preprocess`
+- `.\.venv\Scripts\python.exe -m src.preprocess --output data/processed/manufacturing_data_processed_refactor.csv`
+- `.\.venv\Scripts\python.exe -m src.warehouse`
+- `python -m unittest tests.test_data_contract`
+- `.\.venv\Scripts\python.exe -m unittest tests.test_warehouse_structure`
 
-## Risk Notes
+Notes:
 
-The current legacy import flow still contains risks that are intentionally not changed in this skeleton stage, including:
+- Prefer the project `.venv` Python when running modules that depend on `pandas` or `sqlalchemy`.
+- Do not run `src/warehouse.py --write` unless database environment variables are set and you really intend to write to MySQL.
 
-- database credentials handled outside the new scaffold but still present in legacy code
-- potentially destructive import behavior in the legacy warehouse script
-- file-path coupling between legacy scripts
+## Current Tests
 
-The new scaffold prepares a safer place to fix those issues later, but does not change the current behavior yet.
+The current tests protect different layers of the project:
+
+- `tests/test_data_contract.py`
+  Protects processed CSV contract and legacy-vs-refactor output comparison.
+  It checks file existence, key fields, column count, column order, row count, first-row sample, and warehouse-required input columns.
+- `tests/test_warehouse_structure.py`
+  Protects DataFrame structure produced by `src/warehouse.py`.
+  It checks equipment dimension columns and uniqueness, time dimension date-grain behavior, and fact table columns, row count, and basic dtype semantics.
+
+## SQL Files
+
+- `sql/schema.sql`
+  First-pass MySQL DDL that mirrors the current DataFrame contracts from `src/warehouse.py`.
+- `sql/views.sql`
+  First-pass MySQL analysis views built on the current fact and dimension fields.
+
+These SQL files are documentation-grade and structure-grade artifacts for the current stage. They have not been executed automatically by the repository.
+
+## Current Limits
+
+This project is still in a transition stage. Important caveats:
+
+- legacy scripts are still the business reference
+- current OEE and related KPI fields are proxy or simulated manufacturing metrics built from current rules
+- the SQL design is a first-pass schema, not a final production warehouse
+- the new modules focus on safety and readability first, not on rewriting all legacy behavior at once
