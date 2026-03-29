@@ -54,6 +54,7 @@ See [data_dictionary.md](C:\Itmes_2\docs\data_dictionary.md) for field-level exp
 See [run_guide.md](C:\Itmes_2\docs\run_guide.md) for step-by-step commands.
 See [analysis_report_template.md](C:\Itmes_2\docs\analysis_report_template.md) before starting notebook or EDA work.
 See [01_eda_skeleton.ipynb](C:\Itmes_2\notebooks\01_eda_skeleton.ipynb) for the minimal notebook starting point.
+See [resume_project_draft.md](C:\Itmes_2\docs\resume_project_draft.md) for portfolio, resume, and interview wording.
 
 ## Recommended Beginner Workflow
 
