@@ -51,6 +51,7 @@ Current SQL view definitions include:
   KPI summary by production line and shift.
 
 See [data_dictionary.md](C:\Itmes_2\docs\data_dictionary.md) for field-level explanations.
+See [run_guide.md](C:\Itmes_2\docs\run_guide.md) for step-by-step commands.
 
 ## Recommended Beginner Workflow
 
