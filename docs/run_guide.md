@@ -37,6 +37,7 @@ If you are new to the repository, use this order:
 5. Run `tests.test_data_contract`
 6. Run `tests.test_warehouse_structure`
 7. Review [schema.sql](C:\Itmes_2\sql\schema.sql) and [views.sql](C:\Itmes_2\sql\views.sql)
+8. Open [01_eda_skeleton.ipynb](C:\Itmes_2\notebooks\01_eda_skeleton.ipynb) and continue from the `Dataset Overview` section
 
 This order lets you understand the project before trying any command that writes a new file or talks to MySQL.
 

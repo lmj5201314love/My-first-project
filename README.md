@@ -65,6 +65,7 @@ Recommended order for understanding and validating the project:
 4. Run `src/warehouse.py` in dry-run mode to inspect dimension and fact table structure safely.
 5. Run the test suite to verify current data and warehouse contracts.
 6. Review `sql/schema.sql` and `sql/views.sql` as the first-pass warehouse documentation.
+7. Continue analysis from `notebooks/01_eda_skeleton.ipynb`, starting with the `Dataset Overview` section.
 
 ## Current Safety Design
 
